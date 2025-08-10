@@ -1,0 +1,80 @@
+---
+title: '快速上手'
+description: '在本地运行、开发与调试 turing-python 爬虫'
+icon: 'rocket'
+---
+
+## 环境准备
+
+- Python 3.10+
+- Poetry 或 pip
+- RabbitMQ、Redis、MongoDB（按需，可使用既有集群）
+
+```bash
+# 安装依赖（内网源可替换）
+pip install poetry -i https://mirrors.ivolces.com/pypi/simple/ && poetry install
+```
+
+## 运行引擎（订阅 Topic）
+
+```bash
+poetry run python manager.py start-spider --topics topic1,topic2 --concurrent 4
+```
+
+## 传统模式最小示例
+
+```python
+from crawler import Request, Response
+from crawler.spiders.test_spider import TestSpider
+
+class DemoSpider(TestSpider):
+    name = "demo"
+    def start_request(self):
+        yield Request(url="https://example.com", callback=self.parse)
+    def parse(self, response: Response):
+        # 解析与派生
+        yield Request(url="https://example.com/next", callback=self.parse_next)
+    def parse_next(self, response: Response):
+        print("done", len(response.text))
+```
+
+运行：
+
+```bash
+poetry run python manager.py run demo -c 2
+```
+
+## Step 模式最小示例
+
+```python
+from crawler.step_spiders.base_step_spider import BaseStepSpider
+from crawler import Request, Response
+from common.storage_manager import StorageManager
+
+class ExampleStep(BaseStepSpider):
+    name = "example.group.task"
+    def make_requests(self, **kwargs):
+        keyword = kwargs["keyword"]
+        yield Request(url=f"https://www.ixigua.com/search/{keyword}", callback=self.parse_list, meta={"keyword": keyword})
+    def parse_list(self, response: Response):
+        sm = StorageManager.from_link(response.link)
+        # ... 解析并产出 StepDataItem / StepDataItemMappingItem
+```
+
+运行：
+
+```bash
+export TURING_CONFIG_FILE=config/step-test-config.toml
+export CLOUD=volcengine
+poetry run python manager.py run example.group.task -c 2
+```
+
+## 常用命令
+
+- 启动引擎消费：`manager.py start-spider`
+- 单机调试：`manager.py run <topic>` 或 `manager.py run <spider_name>`
+- 导出器运行：`manager.py run-exporter -q turing_exporter_<task_type>`
+
+<Note>
+更多 Step 模式与存储规范见 `turing-python/step-mode`
+</Note>

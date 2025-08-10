@@ -11,100 +11,38 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "turing-python",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "概览",
             "pages": [
               "index",
-              "quickstart",
-              "development"
+              "turing-python/overview"
             ]
           },
           {
-            "group": "Customization",
+            "group": "入门",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "turing-python/quickstart"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "架构",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API reference",
-        "groups": [
-          {
-            "group": "API documentation",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "Endpoint examples",
-            "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "turing-python/architecture",
+              "turing-python/step-mode"
             ]
           }
         ]
       }
     ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Community",
-          "href": "https://mintlify.com/community",
-          "icon": "slack"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
+    "global": { "anchors": [] }
   },
   "logo": {
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
   },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
+  "navbar": { "links": [], "primary": null },
   "contextual": {
     "options": [
      "copy",

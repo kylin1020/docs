@@ -1,0 +1,54 @@
+---
+title: 'turing-python 框架总览'
+description: '企业级分布式爬虫框架的核心能力、模块与工作流概览'
+icon: 'book'
+---
+
+## 什么是 turing-python
+
+turing-python 是一套企业级分布式爬虫框架，面向大规模、长周期、可观测的数据采集场景，具备高并发、可扩展与可运营能力。
+
+- **分布式任务调度**: 基于 RabbitMQ 的多队列订阅与优先级调度（`crawler/engine.py`）
+- **多下载器支持**: `requests`/`curl`/`httpx`/`playwright` 等，可配置与热插拔（`crawler/downloader/`）
+- **中间件与管道**: 统一的请求/响应中间件和数据处理管道（`crawler/middlewares/`, `crawler/pipelines/`）
+- **两种爬虫范式**:
+  - 传统模式：`start_requests`/`parse`（`crawler/spiders/`）
+  - 可服务化 Step 模式：以任务参数驱动、统一数据/映射输出（`crawler/step_spiders/`）
+- **标准化文件存储**: 通过 `StorageManager` 统一管理多云 S3 路径、批次与目录（`common/storage_manager.py`）
+- **监控与可观测**: Prometheus 指标、错误类型统计、详情页命中统计等（`crawler/engine.py`）
+- **可靠性机制**: 去重、重试、错误回调、任务续期与过期检测
+
+## 核心目录结构
+
+- `crawler/`
+  - `engine.py`: 引擎与任务主循环、消息消费与回调执行
+  - `downloader/`: 下载器实现与上下文
+  - `middlewares/`: 请求/响应中间件
+  - `pipelines/`: Item 处理与入库/导出
+  - `spiders/`: 传统模式爬虫
+  - `step_spiders/`: 可服务化 Step 模式爬虫
+  - `response.py` / `request.py`: 响应与请求对象
+- `common/storage_manager.py`: 统一的多云存储路径与文件操作抽象
+- `dao/`, `model/`, `database/`: 数据访问、模型与数据库连接
+
+## 工作流概览
+
+1. 任务以消息进入队列（Topic → RabbitMQ）
+2. `Engine` 订阅队列，载入下载器/中间件/管道
+3. 根据 `Request` 调用下载器发起请求，触发中间件前/后置处理
+4. 分发至爬虫回调（Spider/StepSpider），产出 Item/新 Link/探索链接
+5. Item 进入 Pipelines 处理；新 Link 继承上下文并批量发布
+6. 统一使用 `StorageManager` 进行资源文件读写与路径落盘
+7. Prometheus 记录请求延迟、大小、错误类型、详情页统计
+
+## 适用场景
+
+- 搜索-详情型、广度探索型、大规模媒体下载、结构化内容抓取
+- 强依赖外部代理/Cookie/风控策略的站点采集
+- 需要标准化交付（原始数据 + 资源 + 映射）的场景
+
+## 下一步
+
+- 快速上手: `turing-python/quickstart`
+- 体系结构: `turing-python/architecture`
+- 可服务化开发: `turing-python/step-mode`
