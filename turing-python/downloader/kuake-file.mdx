@@ -1,0 +1,48 @@
+---
+title: kuake_file 下载器
+description: 支持自动分段与合并的超大文件下载器，含磁盘空间校验
+icon: hard-drive
+---
+
+## 适用场景
+
+- 特大文件直链下载；服务器支持 `Accept-Ranges: bytes` 时自动分段下载与合并
+
+## 名称
+
+`downloader="kuake_file"`
+
+## 关键参数
+
+- 内置分段阈值：`SEGMENT_SIZE ≈ 393MB`，`MIN_SEGMENT_SIZE = 10MB`
+- 与 `file` 基本一致：
+  - `meta.filename`
+  - `meta.filepath`
+  - `meta.update_download_info`（进度上报）
+  - `meta.update_interval`（默认 3 秒）
+  - `meta.head_request_timeout`（默认 16）
+  - `meta.use_curl` + `meta.impersonate`（可选，指纹能力）
+- `downloader_kwargs.limit_size`：限制最大文件大小（字节）
+
+## 最小示例
+
+```python
+yield Request(
+  url="https://large.example.com/video.mp4",
+  downloader="kuake_file",
+  timeout=[6, 600],
+  meta={
+    "filename": "video.mp4",
+    "filepath": "/data/video.mp4",
+    "update_download_info": True,
+  },
+)
+```
+
+## 行为说明
+
+- 先发 HEAD 获取长度与 `Accept-Ranges`
+- 自动选择单线程或分段下载；分段完成后顺序合并并清理分片
+- 下载前校验磁盘可用空间（预留 10% 余量）
+
+

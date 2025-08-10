@@ -1,0 +1,52 @@
+---
+title: '爬虫（Spider & StepSpider）'
+description: '两种开发范式与目录结构'
+icon: 'spider'
+---
+
+## 传统模式（Spider）
+
+目录：`crawler/spiders/`
+
+```python
+from crawler import Request, Response
+from crawler.spiders.test_spider import TestSpider
+
+class DemoSpider(TestSpider):
+    name = "demo"
+    def start_request(self):
+        yield Request(url="https://example.com", callback=self.parse)
+    def parse(self, response: Response):
+        yield Request(url="https://example.com/next", callback=self.parse_next)
+```
+
+## Step 模式（可服务化）
+
+目录：`crawler/step_spiders/`
+
+```python
+from crawler.step_spiders.base_step_spider import BaseStepSpider
+from crawler import Request, Response
+from common.storage_manager import StorageManager
+
+class ExampleStep(BaseStepSpider):
+    name = "example.group.task"
+    def make_requests(self, **kwargs):
+        keyword = kwargs["keyword"]
+        yield Request(url=f"https://www.ixigua.com/search/{keyword}", callback=self.parse_list, meta={"keyword": keyword})
+    def parse_list(self, response: Response):
+        sm = StorageManager.from_link(response.link)
+        # 产出 StepDataItem / StepDataItemMappingItem
+```
+
+> Step 模式适合“输入参数明确、交付格式稳定”的卡片化采集，便于标准化导出。
+
+## Step 爬虫参数要点
+
+- 统一通过 `make_requests(**kwargs)` 接收任务参数；可直接从 `Link.meta` 或 `kwargs` 读取
+- 子请求参数继承：引擎会在 `_inherit_link_attributes` 中将 `topic/priority/allowed_status_codes/middlewares/pipelines/host/domain/sub_path` 等继承到子请求
+- 详情页命中统计：若 `link.meta['is_list_page_url'] is False` 或回调源码包含 `CommonSpiderItem`/`WARCStoreItem`，引擎会记录详情页成功/失败计数
+- 探索链接：在回调中 `yield 'relative/or/absolute/url'` 或 `DiscoveryLink`，引擎会拼接 `response.url` 并去重后批量发布
+
+
+

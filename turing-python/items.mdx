@@ -1,0 +1,32 @@
+---
+title: '数据项（Items）'
+description: 'StepDataItem 与 StepDataItemMappingItem 等'
+icon: 'database'
+---
+
+## StepDataItem
+
+```python
+@dataclass
+class StepDataItem:
+    unique_id: str
+    raw_data_type: str = "normal"
+    raw_data: Dict[str, Any] = field(default_factory=dict)
+    resource_path: Dict[str, Any] = field(default_factory=dict)
+    extra_info: Dict[str, Any] = field(default_factory=dict)
+    collection_name: str = ""
+```
+
+## StepDataItemMappingItem
+
+```python
+@dataclass
+class StepDataItemMappingItem:
+    unique: Union[str, Dict[str, Any]]
+    batch_info: Dict[str, Any]
+    collection_name: str = ""
+```
+
+> 二者用于 Step 模式下的统一入库与导出聚合，详见 `turing-python/step-mode`。
+
+

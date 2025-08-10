@@ -1,0 +1,31 @@
+---
+title: '核心概念'
+description: 'turing-python 的基本术语与整体心智模型'
+icon: 'info-circle'
+---
+
+## 你需要先知道什么
+
+- **Topic（主题）**: 队列名称，用于区分不同任务流。引擎订阅多个 Topic 并按优先级消费。
+- **Request / Response**: 一次下载的输入与输出，贯穿中间件→下载器→回调解析的主线。
+- **Spider（传统模式）**: 通过 `start_requests`/`parse` 驱动，适合探索型与链路复杂的采集。
+- **StepSpider（可服务化模式）**: 通过 `make_requests(**kwargs)` 接收任务参数，产出 `StepDataItem` 与 `StepDataItemMappingItem`，适合标准化交付。
+- **Downloader**: 请求发送实现，支持 `requests`/`curl`/`httpx`/`playwright`/`ulixee` 等。
+- **Middlewares / Pipelines**: 请求/响应前后处理与 Item 出库、落盘等数据处理流程。
+- **StorageManager**: 统一的多云存储与本地路径抽象，负责资源/映射/交付目录的管理与文件操作。
+- **DAO / Model / Database**: 数据访问层、模型与数据库连接（MongoDB/MySQL/Redis/Kafka 等）。
+- **Engine**: 任务主循环，负责消息消费、回调分发、错误处理、重试与监控指标。
+- **Exporter**: 将 Step 模式产出的数据进行聚合统计与映射文件输出。
+- **Signals**: 事件信号（如 `spider_started`、`headers_received`、`response_header_received`、`spider_closed`），中间件可以订阅。
+- **Context（CrawlerContext）**: 下载器上下文，集中 `request/response/proxy_info/start_time/end_time` 等运行期数据与工具方法。
+
+## 目录速览
+
+- `crawler/` 引擎、下载器、爬虫与中间件管道
+- `common/storage_manager.py` 统一文件与路径管理
+- `step_export/` 导出器框架
+- `dao/`, `model/`, `database/` 数据访问与连接
+
+> 建议先阅读 `turing-python/overview` 与 `turing-python/quickstart`，再根据需求深入各模块章节。
+
+

@@ -1,0 +1,35 @@
+---
+title: '存储管理（StorageManager）'
+description: '统一的多云路径与文件操作抽象'
+icon: 'folder'
+---
+
+## 初始化
+
+```python
+from common.storage_manager import StorageManager
+sm = StorageManager.from_link(response.link)
+```
+
+## 常用能力
+
+- 目录：`resources_path` / `batch_resources_path` / `delivery_path` / `mapping_path`
+- 获取子目录：`get_resources_child_dir(resource_type, max_file_count, prefix)`
+- 文件操作：`open`/`exists`/`remove`/`copy`/`move`/`makedirs`
+
+## 示例：保存图片与元数据
+
+```python
+image_dir = sm.get_resources_child_dir(prefix="images/20240101")
+image_path = f"{image_dir}/{image_id}.jpg"
+with sm.open(image_path, "wb") as f:
+    f.write(content)
+
+meta_path = f"{image_dir}/{image_id}.json"
+with sm.open(meta_path, "w", encoding="utf-8") as f:
+    json.dump(meta, f, ensure_ascii=False)
+```
+
+> 所有文件读写必须通过 `StorageManager` 完成。
+
+

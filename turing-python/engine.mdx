@@ -1,0 +1,51 @@
+---
+title: '引擎（Engine）'
+description: '任务主循环、队列消费、回调分发与监控'
+icon: 'cog'
+---
+
+## 职责
+
+- 订阅 RabbitMQ 等队列（多 Topic、多优先级）
+- 装配下载器、中间件与管道
+- 调度 `Spider/StepSpider` 回调
+- 失败重试、错误回调、去重与续期
+- Prometheus 监控（延迟、大小、错误类型、详情页命中等）
+
+## 关键文件
+
+- `crawler/engine.py`：主循环与调度
+- `crawler/executor.py`：并发执行
+- `crawler/engine_supervisor.py`：生命周期与监督
+- `crawler/signals.py`：信号常量（`spider_started`、`headers_received`、`response_header_received` 等）
+- `crawler/signal_manager.py`：信号分发、监听
+
+## 简化示例
+
+```python
+from crawler.engine import Engine
+
+engine = Engine(
+    subscribe_topics=["topic1", "topic2"],
+    concurrent=4,
+)
+engine.run_forever()
+```
+
+## 指标与观测
+
+- QPS、请求时延、响应大小
+- 下载器错误/HTTP错误分布
+- 详情页命中统计、任务队列堆积
+- 可选自定义业务指标（pipeline 中埋点）
+
+## 请求生命周期（含中间件挂载点）
+
+1. `submit_task` → 入队执行
+2. `_prepare_request` → 触发 `process_link`（逐个中间件，允许返回 `Link` 或 `Response`）
+3. `downloader.request(context)` → 产生 `Response`
+4. `_do_process_response` → 触发 `process_response`（逐个中间件）或 `on_response_header`（信号 `response_header_received`）
+5. 分发到 `spider_manager.get_link_callback(link)` 回调 → 产出 Item/Link/DiscoveryLink
+6. 批量发布子请求 `_publish_links` 与探索链接 `_batch_process_discoveries`
+
+

@@ -1,0 +1,37 @@
+---
+title: ulixee 下载器
+description: 基于 Ulixee 的分布式渲染下载器
+icon: satellite-dish
+---
+
+## 适用场景
+
+- 重度 JS / 更强对抗，需要服务端渲染与资源拦截
+
+## 名称
+
+`downloader="ulixee"`
+
+## 关键参数
+
+- meta.blocked_resource_types: 默认屏蔽图片/字体/CSS/媒体
+- meta.user_agent: 默认 "~ chrome >= 120"
+- meta.viewport: 默认 `{width:1080,height:1920}`
+- 环境变量: `ULIXEE_BASE_URL`
+
+## 最小示例
+
+```python
+yield Request(
+  url="https://heavy-js.example.com",
+  downloader="ulixee",
+  timeout=30,
+  meta={
+    "blocked_resource_types": ["BlockImages", "BlockFonts"],
+    "user_agent": "~ chrome >= 122",
+    "viewport": {"width": 1366, "height": 900},
+  },
+)
+```
+
+

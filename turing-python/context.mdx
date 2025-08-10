@@ -1,0 +1,39 @@
+---
+title: '上下文（CrawlerContext）'
+description: '请求期间的运行时上下文与代理管理'
+icon: 'cube'
+---
+
+`CrawlerContext` 位于 `crawler/context.py`，由下载器创建并在请求生命周期内传递，承载本次请求的运行期信息与便捷方法。
+
+## 字段
+
+- **request**: `Request`（必有）
+- **response**: `Response`（下载完成后可用）
+- **proxy_info**: 代理信息对象，见 `common/proxy_manager` 与 `model/proxy_info.py`
+- **task_id**: 任务 ID
+- **start_time / end_time**: 起止时间，用于计算 `latency`
+
+## 代理管理
+
+```python
+async with downloader.context_class(request=link, task_id=link.task_id) as context:
+    await context.set_proxy_info()  # 或自动在 __aenter__ 中设置
+    # context.proxy_info.url 写回到 request.meta['proxy']
+```
+
+内部逻辑（简述）：
+
+- 若 `request.proxy_rule_group_id` 存在，则拼接转发代理到 `config.forward_proxy_host`
+- 若 `proxy_agent` 为空或为 `no-proxy`，则不设置代理
+- 若 `proxy_agent` 为列表，则随机选择一个
+- 否则通过 `proxy_manager.get_proxy_info(agent, proxy_id)` 获取代理，并写入 `request.meta['proxy']`
+
+## 生命周期
+
+- `__aenter__`：设置代理、初始化资源
+- `__aexit__`：释放资源
+
+> 一般不直接继承 `CrawlerContext`，而是由各下载器在 `context_class` 中返回对应实现。
+
+

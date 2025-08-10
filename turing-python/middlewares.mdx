@@ -1,0 +1,77 @@
+---
+title: '中间件（Middlewares）'
+description: '请求/响应前后处理与扩展点'
+icon: 'layer-group'
+---
+
+## 生命周期
+
+1. `request_prepared`：请求构造后、发送前
+2. `response_received`：下载完成、回调前
+3. `error_occurred`：异常处理与重试策略
+
+## 位置
+
+- 目录：`crawler/middlewares/`
+- 在 `Request(middlewares=[...])` 指定，或在引擎全局配置加载
+
+## 典型能力
+
+- Header/Cookie 注入与账户管理
+- 代理与 IP 轮换策略
+- 反爬策略（如秒级延迟、UA 随机、禁图）
+- 失败重试、降级与熔断
+
+## 开发接口（`crawler/middlewares/__init__.py`）
+
+```python
+class BaseMiddleware:
+  name = None
+  def process_link(self, link: Link): ...      # 发送前，对 Link 做改写/校验；可返回 Link/Response 短路
+  def on_response_header(self, response: Response, link: Link): ...  # 收到响应头未下载完成时触发
+  def process_response(self, response: Response, link: Link): ...    # 下载完成后，对 Response 做改写/校验；可返回 Link/Response 短路
+```
+
+调用顺序：`process_link → before_request(下载器内部) → on_response_header(信号) → process_response`。
+
+## 通用中间件示例（`general.py`）
+
+- 文件/文本类型识别与过滤：`enable_filter`/`enable_filter_response`/`is_file_type`
+- 允许状态码调整：自动加入 `302/404`
+- Host/子域限制：`host`、`allow_hosts`、`is_crawl_all`
+- 代理选择与 UA 注入：`select_proxy()`、默认 UA 写入
+- 超时与重定向：对非 `playwright` 默认 `timeout=5`，`playwright=30`，并根据 `meta['allow_redirects']` 设置
+
+## 开发指南
+
+基类：`crawler/middlewares/__init__.py` 中的 `BaseMiddleware`
+
+处理顺序：`process_link` → `on_response_header` → 下载 → `process_response`
+
+可用信号（`crawler/signals.py`）：`headers_received`、`link_received`、`link_error`、`link_success` 等。示例参见 `middlewares/general.py` 通过 `signal_manager.connect` 订阅 `headers_received` 实现“响应头过滤”。
+
+示例片段：
+
+```python
+from crawler.middlewares import BaseMiddleware
+from crawler import signals
+from crawler.signal_manager import signal_manager
+
+class MyMiddleware(BaseMiddleware):
+    name = "my_mw"
+    def __init__(self):
+        signal_manager.connect(self.on_header, signal=signals.headers_received)
+    def process_link(self, link):
+        link.headers.setdefault("user-agent", "MyUA/1.0")
+    def on_header(self, response, link):
+        # 仅在启用时生效
+        if link.middlewares and self.name in link.middlewares:
+            ...
+    def process_response(self, response, link):
+        if response.status_code == 404:
+            raise IgnoreRequest("404")
+```
+
+启用方式：在 `Request(middlewares=["my_mw"])` 指定，或在全局加载时注册。
+
+

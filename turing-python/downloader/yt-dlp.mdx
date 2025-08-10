@@ -1,0 +1,40 @@
+---
+title: yt-dlp 下载器
+description: 面向音视频站点的聚合下载器，自动选择最佳清晰度并合并音视频
+icon: film
+---
+
+## 适用场景
+
+- YouTube/流媒体等音视频站点的资源下载
+
+## 名称
+
+`downloader="yt-dlp"`
+
+## 关键参数（meta）
+
+- concurrent: `concurrent_fragment_downloads`（默认 8）
+- proxy: 传给 `yt_dlp.YoutubeDL` 的 `proxy`
+- file_name / file_path: 组合成输出模板 `outtmpl`
+
+## 最小示例
+
+```python
+yield Request(
+  url="https://www.youtube.com/watch?v=xxxx",
+  downloader="yt-dlp",
+  meta={
+    "concurrent": 8,
+    "proxy": "http://host:8080",
+    "file_name": "%(title)s.%(ext)s",
+    "file_path": "/data/videos",
+  },
+)
+```
+
+## 行为说明
+
+- 内置选项：最佳画质/合并为 mp4、断点续传、分片重试、速度限制等
+
+

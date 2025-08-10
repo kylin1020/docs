@@ -1,0 +1,39 @@
+---
+title: playwright 下载器
+description: 基于 Playwright（patchright）渲染的页面下载器
+icon: globe
+---
+
+## 适用场景
+
+- 必须渲染的 SPA/强 JS 站点
+
+## 名称
+
+`downloader="playwright"`
+
+## 关键参数
+
+- meta.reuse_context: 复用全局上下文，默认 True
+- meta.context_kwargs: 透传给 `browser.new_context(**kwargs)`
+- meta.abort_image: True 时屏蔽图片请求
+- cookies: 支持 dict 或 JSON 字符串
+- 环境变量: `PLAYWRIGHT_WSS_ENDPOINT`, `PLAYWRIGHT_BROWSER_TYPE`, `PLAYWRIGHT_HEADLESS`
+
+## 最小示例
+
+```python
+yield Request(
+  url="https://spa.example.com",
+  downloader="playwright",
+  timeout=30,
+  cookies={"sid": "xx"},
+  meta={
+    "reuse_context": True,
+    "abort_image": True,
+    "context_kwargs": {"viewport": {"width": 1280, "height": 800}},
+  },
+)
+```
+
+

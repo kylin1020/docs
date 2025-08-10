@@ -1,0 +1,47 @@
+---
+title: httpx 下载器
+description: 基于 httpx/httpcore 的高性能下载器，支持并发建连竞速
+icon: gauge
+---
+
+## 适用场景
+
+- 高性能 HTTP 调用；需要多连接/多次尝试抢最快响应
+
+## 名称
+
+`downloader="httpx"`
+
+## 关键参数（meta）
+
+- n_connections: 非流式请求的并发连接提示
+- fast_n_connections: 流式下载时 CONNECT 并发数
+- n_requests: 引擎层并发尝试，取最快响应头
+
+其他
+
+- timeout: `int | [connect, read]`（内部 `(8, read)`）
+
+## 最小示例（单次）
+
+```python
+yield Request(
+  url="https://example.com/page",
+  downloader="httpx",
+  timeout=[8, 25],
+  meta={"n_connections": 2},
+)
+```
+
+## 并发竞速（推荐）
+
+```python
+yield Request(
+  url="https://example.com/big",
+  downloader="httpx",
+  timeout=[8, 60],
+  meta={"n_requests": 3, "fast_n_connections": 3},
+)
+```
+
+

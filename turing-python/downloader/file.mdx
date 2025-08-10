@@ -1,0 +1,47 @@
+---
+title: file 下载器
+description: 直链文件下载器，支持进度上报与大小校验
+icon: file-down
+---
+
+## 适用场景
+
+- 直链下载小中型文件；可按需启用 curl 指纹
+
+## 名称
+
+`downloader="file"`
+
+## 关键参数
+
+- meta.filename: 输出文件名
+- meta.filepath: 目标文件完整路径（存在时自动添加 `_1` 等后缀）
+- meta.head_request_timeout: 默认 16
+- meta.chunk_size: 默认 2MB
+- meta.update_interval: 进度上报间隔，默认 3 秒
+- meta.update_download_info: True 开启任务进度上报
+- meta.ignore_size: True 跳过最终大小校验
+- meta.use_curl: True 使用 curl_cffi，支持 `meta.impersonate`
+- downloader_kwargs.limit_size: 最大允许大小（字节）
+
+## 最小示例
+
+```python
+yield Request(
+  url="https://cdn.example.com/a.bin",
+  downloader="file",
+  timeout=[6, 120],
+  headers={"referer": "https://example.com"},
+  meta={
+    "filename": "a.bin",
+    "filepath": "/data/downloads/a.bin",
+    "update_download_info": True,
+    "chunk_size": 1024 * 1024 * 4,
+    "use_curl": True,
+    "impersonate": "chrome131",
+  },
+  downloader_kwargs={"limit_size": 5 * 1024 * 1024 * 1024},
+)
+```
+
+

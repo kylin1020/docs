@@ -1,0 +1,25 @@
+---
+title: '常见问题（FAQ）'
+description: '排错与配置问答'
+icon: 'circle-question'
+---
+
+### 如何选择下载器？
+
+- 静态页/接口：`curl`/`requests`/`httpx`
+- 强对抗/动态渲染：`playwright`/`ulixee`
+- 大文件直传：`file`/`aria2c`/`yt-dlp`
+
+### 代理与 Cookie 怎么配置？
+
+- 在 `Request(proxy_agent=...)` 与中间件里统一注入 Cookie
+
+### 为什么请求超时？
+
+- 增大 `timeout`，区分连接与读取时长；确认代理是否稳定
+
+### 文件为何必须用 StorageManager？
+
+- 为了路径规范、云兼容与目录分片；禁止直接读写 OSS/S3 客户端
+
+

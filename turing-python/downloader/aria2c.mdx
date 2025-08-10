@@ -1,0 +1,47 @@
+---
+title: aria2c 下载器
+description: 调用系统 aria2c 二进制的多线程文件下载器
+icon: download
+---
+
+## 适用场景
+
+- 大文件直链下载；需要多线程加速与断点续传
+
+## 前置要求
+
+目标环境已安装 `aria2c` 可执行文件
+
+## 名称
+
+`downloader="aria2c"`
+
+## 关键参数（meta）
+
+- concurrent: 线程数（映射 `-x`/`-s`，默认 16）
+- proxy: 传给 `--all-proxy`（如 `http://user:pass@host:port`）
+- file_name: 输出文件名
+- file_path: 输出目录
+- headers: 通过 `--header=K: V` 注入
+
+## 最小示例
+
+```python
+yield Request(
+  url="https://cdn.example.com/big.iso",
+  downloader="aria2c",
+  headers={"referer": "https://example.com"},
+  meta={
+    "concurrent": 16,
+    "proxy": "http://user:pass@host:8080",
+    "file_name": "big.iso",
+    "file_path": "/data/downloads",
+  },
+)
+```
+
+## 行为说明
+
+- 以子进程方式执行 `aria2c`，实时读取输出；失败会清理未完成文件
+
+

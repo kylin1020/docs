@@ -1,0 +1,32 @@
+---
+title: requests 下载器
+description: 基于 requests 的传统稳定下载器
+icon: file-code
+---
+
+## 适用场景
+
+- 传统网站、简单接口、稳定性优先
+
+## 名称
+
+`downloader="requests"`
+
+## 关键参数
+
+- stream: `True | False`
+- timeout: `int | [connect, read]`，内部规范化为 `(6, read)`
+
+## 最小示例
+
+```python
+yield Request(
+  url="https://api.example.com/data",
+  method="GET",
+  downloader="requests",
+  stream=False,
+  timeout=[6, 20],
+)
+```
+
+

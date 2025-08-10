@@ -1,0 +1,32 @@
+---
+title: rnet_file 下载器
+description: 基于 rnet 客户端的文件下载器
+icon: hard-drive
+---
+
+## 适用场景
+
+- 直链文件下载，需要 rnet 客户端的稳定与速度
+
+## 名称
+
+`downloader="rnet_file"`
+
+## 关键参数
+
+- 与 `file` 下载器类似：`meta.filename`、`meta.filepath`、`meta.update_interval`、`meta.head_request_timeout`
+- `downloader_kwargs.limit_size` 限制最大文件大小
+
+## 最小示例
+
+```python
+yield Request(
+  url="https://dl.example.com/big.zip",
+  downloader="rnet_file",
+  timeout=[60, 10],
+  meta={"filename": "big.zip", "filepath": "/data/big.zip"},
+  downloader_kwargs={"limit_size": 20 * 1024 * 1024 * 1024},
+)
+```
+
+

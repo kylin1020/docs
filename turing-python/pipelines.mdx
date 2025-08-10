@@ -1,0 +1,19 @@
+---
+title: '管道（Pipelines）'
+description: 'Item 的处理、入库与交付'
+icon: 'route'
+---
+
+## 职责
+
+- 清洗与验证 Item
+- 写入数据库（Mongo/MySQL 等）
+- 文件落盘（配合 `StorageManager`）
+- 统计指标与错误上报
+
+## 位置与配置
+
+- 目录：`crawler/pipelines/`
+- 在 `Request(pipelines=[...])` 指定，或按项目默认启用
+
+

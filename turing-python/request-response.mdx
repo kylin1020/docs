@@ -1,0 +1,100 @@
+---
+title: '请求与响应'
+description: 'Request/Response 的字段、用法与最佳实践'
+icon: 'arrows-left-right'
+---
+
+## Request 基本用法
+
+```python
+from crawler import Request
+
+yield Request(
+  url="https://example.com",
+  method="GET",
+  headers={"accept": "text/html"},
+  downloader="curl",
+  timeout=[8, 30],
+  proxy_agent="hk_rock_abuyun",
+  retry_times=5,
+  meta={"impersonate": "chrome131"},
+)
+```
+
+常用字段：`url`、`topic`、`downloader`、`proxy_agent`、`timeout`、`headers`、`params`、`cookies`、`body`、`middlewares`、`pipelines`、`meta`、`retry_times`、`priority`。
+
+> 全量字段与默认值请见 `turing-python/overview` 的参数表或项目 `README.md`。
+
+## Request 参数详解（来自 `crawler/request.py`）
+
+| 名称 | 类型/默认值 | 说明 |
+|---|---|---|
+| url | str | 必填，请求链接 |
+| method | Literal['GET','POST','HEAD','DELETE','PUT'] = 'GET' | 请求方法 |
+| callback | str/Callable='parse' | 回调函数名或可调用对象 |
+| one_task_callback | str/Callable | 单次任务结束回调 |
+| downloader | str | 下载器：`requests`/`curl`/`httpx`/`playwright`/`ulixee`/`file`/`aria2c`/`yt-dlp` 等 |
+| topic | str | 投递/订阅的消息主题 |
+| is_deduplication / is_dedup | bool=false | 是否去重（两个字段兼容） |
+| deduplication_key / dedup_key | str | 去重键（兼容） |
+| deduplication_value / dedup_value | str | 去重值（兼容，未给时通常使用 `url`） |
+| downloader_kwargs | dict | 下载器特定参数（例如 `file` 限速/分片等） |
+| proxy_agent | str 或 List[str] | 代理池标识，列表时随机选择 |
+| proxy_ip_strategy | str | 代理选取策略 |
+| download_delay | float=0 | 单次请求延迟（秒） |
+| delay_by | str | 延迟的依据字段 |
+| timeout | int 或 [int,int] | 连接/读取超时；`general` 中间件会对 `playwright` 默认 30，其他 5 |
+| processor | str/Callable | 自定义处理器名称或函数 |
+| spider | str | 指定处理爬虫名称（跨爬虫派发时使用） |
+| err_callback | str/Callable | 错误回调 |
+| crontab | str | CRON 表达式定时 |
+| run_date | str | 指定时间点运行 |
+| interval | str | 间隔运行（支持 `1m`/`2h` 等人类可读字符串） |
+| start_time | str | 起始时间（配合 interval） |
+| auto_setup_start_time | bool | 是否自动设置采集开始时间（仅 interval） |
+| schedule_description | str | 计划任务描述 |
+| cookie_type | str | Cookie 类型标识 |
+| cookie_strategy | str | Cookie 策略 |
+| priority | int=0 | 优先级（大值优先） |
+| headers | dict | 请求头（内部封装 `Headers`） |
+| params | dict | 查询参数 |
+| cookies | dict | Cookies |
+| body | dict/str | 请求体（JSON/表单/自定义） |
+| ssl_verify | bool=true | SSL 校验 |
+| stream | bool=false | 是否流式下载（大文件/直传） |
+| pipelines | List[str] | 指定使用的管道 |
+| middlewares | List[str] | 指定启用的中间件名称 |
+| meta | dict | 透传上下文，见“常用 meta 键” |
+| allowed_status_codes | List[int] | 允许的非 2xx 状态码（`general` 会补充 302/404） |
+| allow_redirects | bool=true | 是否允许重定向（兼容 `meta['allow_redicts']`） |
+| retry_times | int=5 | 重试次数 |
+| retry_interval | str/int | 重试间隔（支持 `1m`/`2h`） |
+| files | dict | 文件上传用 |
+| run_now | bool=true | 立即执行（与调度配合时可关闭） |
+| impersonate | str | 浏览器指纹模拟（会写入 `meta['impersonate']`） |
+
+### 常用 meta 键（与中间件协同）
+
+- `impersonate`: 下载器指纹模拟（curl/rnet 等）
+- `proxy_id`/`proxy`: 代理选择；`CrawlerContext.get_proxy_info()` 会写入 `meta['proxy']`
+- `enable_filter`: 启用通用文件类型与域过滤（见 `middlewares/general.py`）
+- `enable_filter_response`: 开启响应头过滤逻辑
+- `host`、`allow_hosts`: 限定主域与允许子域
+- `is_crawl_all`: 是否允许跨子域抓取
+- `allow_redirects`（以及兼容键 `allow_redicts`）: 是否允许 302
+- `is_file_type`: 由中间件识别写入，用于后续逻辑
+
+## Response 内容
+
+- `status`, `headers`, `text`/`content`
+- 原始请求上下文透传：`response.request` 与 `response.meta`
+- 文件流下载配合 `stream=True`
+
+## 最佳实践
+
+- 用 `meta` 传递上下文与去重键
+- 统一在 `headers` 设置必要 UA/Referer；下载器可设置 `impersonate`
+- 合理设置 `timeout` 为 `[connect, read]` 或 `[read, connect]`
+- 明确 `retry_times` 与幂等性，避免副作用
+
+

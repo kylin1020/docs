@@ -1,0 +1,34 @@
+---
+title: rnet 下载器
+description: 高性能原生客户端下载器，支持丰富的指纹模拟
+icon: network
+---
+
+## 适用场景
+
+- 高并发与强指纹模拟兼顾的接口访问
+
+## 名称
+
+`downloader="rnet"`
+
+## 关键参数
+
+- meta.impersonate: 如 "chrome131"、"safari18"、"firefox139"、"okhttp5"、"edge134"、"opera119" 等（默认随机）
+- timeout: `int | [timeout, connect_timeout]`
+
+## 最小示例
+
+```python
+yield Request(
+  url="https://api-secure.example.com",
+  method="POST",
+  headers={"content-type": "application/json"},
+  body='{"k":"v"}',
+  downloader="rnet",
+  timeout=[30, 10],
+  meta={"impersonate": "chrome131"},
+)
+```
+
+

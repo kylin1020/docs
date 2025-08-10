@@ -1,0 +1,23 @@
+---
+title: '调度与运行'
+description: '任务创建、定时与并发运行'
+icon: 'clock'
+---
+
+## 命令
+
+```bash
+poetry run python manager.py run <topic_or_spider> -c 4
+```
+
+## 定时与计划
+
+- `Request(crontab=...)` 指定 CRON
+- `run_date` 指定时间点
+- `interval` 指定间隔运行
+
+## 面板
+
+- 任务管理面板支持创建与查看任务（见 `turing-python/overview`）
+
+

@@ -1,0 +1,102 @@
+---
+title: 下载器
+description: turing-python 支持的所有下载器模块总览与导航
+icon: download
+---
+
+## 下载器模块总览
+
+按需选择下载器以兼顾性能、对抗性与易用性。每个下载器有独立说明页：
+
+- [curl](/turing-python/downloader/curl)
+- [requests](/turing-python/downloader/requests)
+- [httpx](/turing-python/downloader/httpx)
+- [playwright](/turing-python/downloader/playwright)
+- [ulixee](/turing-python/downloader/ulixee)
+- [file](/turing-python/downloader/file)
+- [rnet](/turing-python/downloader/rnet)
+- [rnet_file](/turing-python/downloader/rnet-file)
+- [kuake_file](/turing-python/downloader/kuake-file)
+- [aria2c](/turing-python/downloader/aria2c)
+- [yt-dlp](/turing-python/downloader/yt-dlp)
+
+> 在爬虫中通过 `Request(..., downloader="<name>")` 选择下载器。
+
+
+## 快速示例
+
+### curl
+
+```python
+yield Request(
+  url="https://example.com",
+  headers={"accept": "text/html"},
+  downloader="curl",
+  timeout=[8, 30],
+  meta={"impersonate": "chrome131"},
+)
+```
+
+### requests
+
+```python
+yield Request(
+  url="https://api.example.com/data",
+  method="GET",
+  downloader="requests",
+  stream=False,
+  timeout=[6, 20],
+)
+```
+
+### file
+
+```python
+yield Request(
+  url="https://cdn.example.com/a.bin",
+  downloader="file",
+  timeout=[6, 120],
+  headers={"referer": "https://example.com"},
+  meta={
+    "filename": "a.bin",
+    "filepath": "/data/downloads/a.bin",
+    "update_download_info": True,
+    "chunk_size": 1024 * 1024 * 4,
+    "use_curl": True,
+    "impersonate": "chrome131",
+  },
+  downloader_kwargs={"limit_size": 5 * 1024 * 1024 * 1024},
+)
+```
+
+### playwright
+
+```python
+yield Request(
+  url="https://spa.example.com",
+  downloader="playwright",
+  timeout=30,
+  cookies={"sid": "xx"},
+  meta={
+    "reuse_context": True,
+    "abort_image": True,
+    "context_kwargs": {"viewport": {"width": 1280, "height": 800}},
+  },
+)
+```
+
+### rnet
+
+```python
+yield Request(
+  url="https://api-secure.example.com",
+  method="POST",
+  headers={"content-type": "application/json"},
+  body='{"k":"v"}',
+  downloader="rnet",
+  timeout=[30, 10],
+  meta={"impersonate": "chrome131"},
+)
+```
+
+

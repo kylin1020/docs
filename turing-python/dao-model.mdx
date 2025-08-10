@@ -1,0 +1,17 @@
+---
+title: 'DAO 与模型'
+description: '数据访问层与领域模型介绍'
+icon: 'table'
+---
+
+## 目录
+
+- `dao/`：数据访问对象（含各业务集合/表访问）
+- `model/`：领域模型定义，如 `link.py`、`step_data.py` 等
+
+## 建议
+
+- 将采集产出通过 Pipeline/DAO 写入数据库
+- 领域模型统一由 `model/` 提供，便于复用与类型约束
+
+

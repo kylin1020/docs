@@ -1,0 +1,40 @@
+---
+title: curl 下载器
+description: 基于 curl_cffi 的高仿真指纹下载器，适合强反爬站点
+icon: bolt
+---
+
+## 适用场景
+
+- 强指纹校验/JA3/TLS/HTTP2 行为敏感站点
+- 需要浏览器指纹模拟（impersonate）
+
+## 名称
+
+`downloader="curl"`
+
+## 关键参数
+
+- meta.impersonate: 浏览器模拟，默认在 `{"safari","chrome","chrome110","chrome131"}` 中随机
+- timeout: `int | [connect, read]`，内部规范化为 `(8, read)`
+- 代理: 通过 `proxy_agent` 自动注入，也可在系统侧配置
+
+## 最小示例
+
+```python
+yield Request(
+  url="https://example.com",
+  headers={"accept": "text/html"},
+  downloader="curl",
+  timeout=[8, 30],
+  proxy_agent="hk_rock_squid",
+  meta={"impersonate": "chrome131"},
+)
+```
+
+## 行为说明
+
+- 使用 `curl_cffi.requests.AsyncSession` 建立会话，并按 `impersonate` 设置 TLS/UA 等指纹
+- 自动携带 cookies 并回填到响应
+
+
