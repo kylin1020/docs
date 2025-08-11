@@ -39,6 +39,7 @@
               "turing-python/request-response",
               "turing-python/spider",
               "turing-python/step-mode",
+              "turing-python/cookie-manager",
               "turing-python/downloader/index",
               "turing-python/middlewares",
               "turing-python/pipelines",

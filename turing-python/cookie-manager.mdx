@@ -1,0 +1,165 @@
+---
+title: Cookie 管理器
+description: 基于 Redis 的多账号 Cookie 池，支持随机/间隔轮询、过期控制、冻结与阻塞等待。便于在高并发爬虫中稳定复用账号态。
+icon: cookie
+---
+
+## 适用场景
+
+- 需要在高并发任务中稳定复用登录态/账号态 Cookie
+- 多账号轮询、限速与退避（按 Cookie 轮转间隔控制请求速率）
+- 统一过期、冻结与删除策略，避免无效 Cookie 污染任务
+
+## 快速开始
+
+### 添加 Cookie
+
+```python
+from common import cookie_manager
+
+# 基本添加（不过期）
+cookie_manager.add("bilibili", "SESSDATA=xxx; bili_jct=yyy")
+
+# 添加并设置过期（例如 1 小时）
+cookie_manager.add("bilibili", "SESSDATA=zzz; bili_jct=kkk", expire_after_seconds=60*60)
+```
+
+### 获取 Cookie
+
+随机模式（interval=0，默认）：
+
+```python
+from common import cookie_manager
+
+cookie = cookie_manager.get("bilibili")
+# or 等价：cookie_manager.get("bilibili", interval=0)
+```
+
+按时间顺序轮询（设置轮询间隔，单位秒）：
+
+```python
+cookie = cookie_manager.get("bilibili", interval=1.0)
+```
+
+异步获取（在线程池中执行，适合 async 场景）：
+
+```python
+cookie = await cookie_manager.async_get("bilibili", interval=0)
+```
+
+### 删除与清理
+
+```python
+# 删除单个 Cookie
+cookie_manager.delete("bilibili", "SESSDATA=xxx; bili_jct=yyy")
+
+# 清空平台 Cookie 池
+cookie_manager.clear("bilibili")
+```
+
+## 与请求集成
+
+传统模式：
+
+```python
+from crawler import Request
+from common import cookie_manager
+
+def build_request():
+    cookie = cookie_manager.get("bilibili", interval=1.0)
+    return Request(
+        url="https://api.bilibili.com/x/space/my/info",
+        headers={
+            "cookie": cookie,
+            "user-agent": "Mozilla/5.0",
+        },
+        downloader="curl",
+        timeout=[15, 8],
+        proxy_agent="no-proxy",
+        meta={"host": "api.bilibili.com"},
+    )
+```
+
+Step 模式：
+
+```python
+from crawler import Request
+from crawler.step_spiders.base_step_spider import BaseStepSpider
+from common import cookie_manager
+
+class DemoStep(BaseStepSpider):
+    name = "example.cookie.demo"
+
+    def make_requests(self, **kwargs):
+        cookie = cookie_manager.get("bilibili", interval=1.0)
+        yield Request(
+            url="https://api.bilibili.com/x/space/my/info",
+            headers={"cookie": cookie},
+            callback=self.parse,
+            downloader="curl",
+            meta={"host": "api.bilibili.com"},
+        )
+
+    def parse(self, response):
+        # 解析数据并产出 StepDataItem / StepDataItemMappingItem
+        pass
+```
+
+## 核心能力与行为
+
+- 随机/顺序两种获取模式：
+  - 随机模式（interval=0）：使用 Redis ZRANDMEMBER 随机挑选，下次可用时间立即生效
+  - 顺序模式（interval>0）：按最早可用时间取出 Cookie，并将其下次可用时间设置为 now + interval
+- 过期控制：支持为 Cookie 设置绝对过期时间，过期后自动清理
+- 冻结与退避：可将某个 Cookie 冻结一段时间，或在异常后延迟下次使用时间
+- 阻塞等待：当池为空时，支持阻塞等待（block=True）直到获取成功
+
+## API（简要）
+
+```python
+from common import cookie_manager
+
+cookie_manager.add(platform: str, cookie: str, expire_after_seconds: Optional[int] = None)
+cookie_manager.get(platform: str, interval: float = 0, block: bool = True) -> Optional[str]
+await cookie_manager.async_get(platform: str, interval: float = 0, block: bool = True) -> Optional[str]
+cookie_manager.count(platform: str) -> int
+cookie_manager.delete(platform: str, cookie: str) -> None
+cookie_manager.clear(platform: str) -> None
+cookie_manager.frozen(platform: str, cookie: str, delay: int = 86400) -> None
+cookie_manager.set_cookie_next_use_time(platform: str, cookie: str, delay: int) -> None
+cookie_manager.get_all_cookies(platform: str) -> Iterable[str]
+```
+
+参数说明：
+
+- interval：
+  - 0（默认）：随机模式，适合均衡分配与突发高并发
+  - >0：顺序模式，按 Cookie 的“下次可用时间”轮询，常用于对目标站点限速
+- block：
+  - True（默认）：若暂无可用 Cookie 将阻塞并轮询等待
+  - False：立即返回 None
+
+## Redis 结构约定
+
+- 主集合：`{config.redis.cookie_key_prefix}{platform}`，ZSET 存储 Cookie → 下次可用时间（score）
+- 过期集合：`{config.redis.cookie_key_prefix}{platform}:expire`，ZSET 存储 Cookie → 绝对过期时间（score）
+
+提示：`config.redis.cookie_key_prefix` 需在配置中设定（如 `turing:cookies:`）。
+
+## 最佳实践
+
+- 每次获取后尽快发起请求，不在业务层长期缓存 Cookie
+- 针对同一站点按账号限速时，使用顺序模式并合理设置 `interval`
+- 命中 401/403 或风控：
+  - 优先使用 `frozen` 暂时冻结；确认失效后使用 `delete`
+  - 也可通过 `set_cookie_next_use_time` 执行指数退避
+- 通过监控 `count(platform)` 评估池健康度，及时补充
+
+## 常见问题
+
+- 获取不到 Cookie？
+  - 确认已通过 `add` 写入 Cookie，并检查 Redis 连接与 `config.redis.cookie_key_prefix`
+  - 若使用顺序模式，确认 Cookie 的下次可用时间未被设置到未来很久
+  - 可暂时切换随机模式（interval=0）验证可用性
+
+
