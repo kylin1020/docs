@@ -1,0 +1,106 @@
+---
+title: 'Prometheus 监控埋点'
+description: '如何在爬虫与基础组件中埋点并暴露 Prometheus 指标'
+icon: 'activity'
+---
+
+本页介绍 `turing-python` 中的监控埋点能力，基于 `utils/prometheus_monitor.py` 提供的单例 `PrometheusMonitor`。支持请求延迟、响应大小、错误类型、任务计数、下载速率等核心指标。
+
+## 快速开始
+
+```python
+from utils.prometheus_monitor import PrometheusMonitor
+
+# 获取单例（默认 0.0.0.0:9090）
+monitor = PrometheusMonitor.get_instance()
+
+# 启动 HTTP 服务器以暴露 /metrics（同步方式）
+monitor.start_server()
+
+# 或在异步环境中启动（推荐在引擎/服务启动处调用）
+# await monitor.start_server_async()
+```
+
+服务启动后访问 `http://<host>:<port>/metrics` 查看指标，默认端口为 `9090`（可在 `get_instance(port=..., addr=...)` 中覆盖）。
+
+## 在引擎中启用
+
+引擎内已集成条件启动逻辑，示例：
+
+```python
+from utils.prometheus_monitor import PrometheusMonitor
+
+monitor = PrometheusMonitor.get_instance()
+await monitor.start_server_async()
+```
+
+## 常用埋点
+
+- 请求/响应与下载速率
+  ```python
+monitor.record_response(status_code=200, latency=0.35, size=128_000, spider="google")
+  ```
+
+- 任务与并发
+  ```python
+monitor.record_task(spider="google", topic="search")
+monitor.set_active_tasks(count=42, spider="google", topic="search")
+  ```
+
+- 错误与代理
+  ```python
+monitor.record_error_type(error_type="ProxyTimeout", spider="google")
+monitor.record_proxy_error(spider="google", proxy_agent="hk_rock_abuyun")
+  ```
+
+- 详情页命中与中间件/管道
+  ```python
+monitor.record_detail_page(status="success", spider="youtube_detail")
+monitor.record_middleware(operation="process_response", spider="google", middleware="RetryMiddleware")
+monitor.record_pipeline(status="success", spider="google", pipeline="MongoPipeline")
+  ```
+
+- 站点/专项采集
+  ```python
+monitor.record_zhihu_status(version="v1", status="success")
+monitor.record_site_collection(site="zhihu", status="failure")
+monitor.record_warp_proxy(status="success", spider="google", proxy="warp-1")
+  ```
+
+- 简单请求计数
+  ```python
+monitor.record_request(spider="google", status="success")
+  ```
+
+## 指标与标签
+
+- 请求延迟直方图：`crawler_request_latency_seconds_v3{spider}`
+- 响应大小直方图：`crawler_response_size_bytes_v3{spider}`
+- 平均下载速率直方图：`crawler_download_speed_bytes_per_second_v2{spider}`
+- 请求状态码计数：`crawler_status_code_total{spider,status_code}`
+- 任务计数：`crawler_task_total{spider,topic}`
+- 活跃任务：`crawler_active_tasks{spider,topic}`
+- 中间件计数：`crawler_middleware_total{spider,middleware,operation}`
+- 管道计数：`crawler_pipeline_total{spider,pipeline,status}`
+- 详情页计数：`crawler_detail_page_total{spider,status}`
+- 错误类型计数：`crawler_error_type_total{spider,error_type}`
+- 代理错误计数：`crawler_proxy_error_total{spider,proxy_agent}`
+- 站点采集计数：`crawler_site_collection_total{site,status}`
+- Warp 代理计数：`crawler_warp_proxy_total{spider,status,proxy}`
+- 简单请求计数：`crawler_request_total{spider,status}`
+
+## 推荐实践
+
+- 在组件关键路径埋点：下载器、重试逻辑、中间件、数据管道、详情页解析。
+- 标签使用统一命名：`spider` 用爬虫名，`topic` 用任务主题，`status` 统一为 `success|failure`。
+- 长耗时或大响应务必记录 `latency` 与 `size`，以便计算下载速率并排查瓶颈。
+- 使用异步启动 `start_server_async()`，避免阻塞事件循环。
+
+## Prometheus / Grafana
+
+- 抓取配置：指向运行节点的 `http://<host>:9090/metrics`。
+- 常见查询：
+  - P95 延迟：`histogram_quantile(0.95, sum(rate(crawler_request_latency_seconds_v3_bucket[5m])) by (le, spider))`
+  - 错误占比：`sum(rate(crawler_error_type_total[5m])) by (error_type) / sum(rate(crawler_request_total[5m]))`
+
+

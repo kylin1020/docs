@@ -53,7 +53,8 @@
           {
             "group": "监控与调试",
             "pages": [
-              "turing-python/monitoring-debugging"
+              "turing-python/monitoring-debugging",
+              "turing-python/prometheus-monitor"
             ]
           },
           {
